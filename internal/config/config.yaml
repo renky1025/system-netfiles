@@ -1,0 +1,31 @@
+server:
+  port: 8080
+  mode: debug
+
+database:
+  host: localhost
+  port: 5432
+  user: postgres
+  password: postgrespwd
+  dbname: netfilessys
+  sslmode: disable
+
+redis:
+  addr: localhost:6379
+  password: ""
+  db: 0
+
+storage:
+  type: minio  # Options: local, minio
+  local_path: E:/netfilessys/uploads
+
+minio:
+  endpoint: localhost:9000
+  access_key_id: minioadmin
+  secret_access_key: minioadmin
+  bucket_name: netfilessys
+  use_ssl: false
+
+jwt:
+  secret: "your_jwt_secret_key_change_in_production_min_32_chars"
+  expire_hours: 24

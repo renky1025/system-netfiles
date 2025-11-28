@@ -1,0 +1,78 @@
+
+Running 4 tests using 4 workers
+
+  ✘  4 [chromium] › tests\e2e\file_ops.spec.ts:12:5 › File Operations › should register and login (5.1s)
+  ✘  3 [chromium] › tests\e2e\file_ops.spec.ts:84:5 › File Operations › should upload to subfolder and verify display (5.1s)
+  ✘  2 [chromium] › tests\e2e\file_ops.spec.ts:67:5 › File Operations › should create folder and verify tree update (5.1s)
+  ✘  1 [chromium] › tests\e2e\file_ops.spec.ts:40:5 › File Operations › should upload file and update list (5.1s)
+
+
+  1) [chromium] › tests\e2e\file_ops.spec.ts:12:5 › File Operations › should register and login ────
+
+    Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3000/register
+    Call log:
+    [2m  - navigating to "http://localhost:3000/register", waiting until "load"[22m
+
+
+      11 |
+      12 |     test('should register and login', async ({ page }) => {
+    > 13 |         await page.goto('/register');
+         |                    ^
+      14 |         await page.fill('input[placeholder="Username"]', TEST_USER);
+      15 |         await page.fill('input[placeholder="Password"]', TEST_PASS);
+      16 |         await page.fill('input[placeholder="Confirm Password"]', TEST_PASS);
+        at E:\netfilessys\frontend\tests\e2e\file_ops.spec.ts:13:20
+
+  2) [chromium] › tests\e2e\file_ops.spec.ts:40:5 › File Operations › should upload file and update list 
+
+    Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3000/login
+    Call log:
+    [2m  - navigating to "http://localhost:3000/login", waiting until "load"[22m
+
+
+      43 |         // Better: use test.beforeEach to login.
+      44 |
+    > 45 |         await page.goto('/login');
+         |                    ^
+      46 |         await page.fill('input[placeholder="Username"]', TEST_USER);
+      47 |         await page.fill('input[placeholder="Password"]', TEST_PASS);
+      48 |         await page.click('button:has-text("Login")');
+        at E:\netfilessys\frontend\tests\e2e\file_ops.spec.ts:45:20
+
+  3) [chromium] › tests\e2e\file_ops.spec.ts:67:5 › File Operations › should create folder and verify tree update 
+
+    Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3000/login
+    Call log:
+    [2m  - navigating to "http://localhost:3000/login", waiting until "load"[22m
+
+
+      66 |
+      67 |     test('should create folder and verify tree update', async ({ page }) => {
+    > 68 |         await page.goto('/login');
+         |                    ^
+      69 |         await page.fill('input[placeholder="Username"]', TEST_USER);
+      70 |         await page.fill('input[placeholder="Password"]', TEST_PASS);
+      71 |         await page.click('button:has-text("Login")');
+        at E:\netfilessys\frontend\tests\e2e\file_ops.spec.ts:68:20
+
+  4) [chromium] › tests\e2e\file_ops.spec.ts:84:5 › File Operations › should upload to subfolder and verify display 
+
+    Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3000/login
+    Call log:
+    [2m  - navigating to "http://localhost:3000/login", waiting until "load"[22m
+
+
+      83 |
+      84 |     test('should upload to subfolder and verify display', async ({ page }) => {
+    > 85 |         await page.goto('/login');
+         |                    ^
+      86 |         await page.fill('input[placeholder="Username"]', TEST_USER);
+      87 |         await page.fill('input[placeholder="Password"]', TEST_PASS);
+      88 |         await page.click('button:has-text("Login")');
+        at E:\netfilessys\frontend\tests\e2e\file_ops.spec.ts:85:20
+
+  4 failed
+    [chromium] › tests\e2e\file_ops.spec.ts:12:5 › File Operations › should register and login ─────
+    [chromium] › tests\e2e\file_ops.spec.ts:40:5 › File Operations › should upload file and update list 
+    [chromium] › tests\e2e\file_ops.spec.ts:67:5 › File Operations › should create folder and verify tree update 
+    [chromium] › tests\e2e\file_ops.spec.ts:84:5 › File Operations › should upload to subfolder and verify display 

@@ -1,0 +1,48 @@
+08-04
+构建工具 处理word 文档 提取图片 pydandoc， 处理pdf 提取图片  ==》 全部转换markdown 文件
+流程已跑通
+
+调整 ui 显示问题
+
+08-05
+
+fastgpt 升级到当前版本，4.11.1
+清理历史数据 保证干净系统 为archline服务
+
+kg提取优化，实体
+1. 按句子分拆，
+2.llm 提取实体
+3. 检查实体
+4. jieba spacy 再拆分长句 提取实体
+
+可独立运行 exe， electron
+
+08-06
+
+export OLLAMA_MIRROR="https://ghproxy.cn/https://github.com/ollama/ollama/releases/latest/download"
+curl -fsSL https://ollama.com/install.sh | sed "s|https://ollama.com/download|$OLLAMA_MIRROR|g" | sh
+
+数据清理： 序列目录，无用图片丢弃， 图片上传替换路径
+
+
+08-07
+
+知识图谱service， 
+实体合并规则，llm提取实体格式匹配，过滤非法实体
+
+electron  自动版本，
+自动升级 -- todo
+
+markdown 提取， CA0==>CAD Cao
+
+fastgpt 流程升级
+基本上配置了最终流程， 知识库和该有的节点
+
+
+08-08
+revit mcp 调试 - 完成自动绘制 工作，修改工作 -- done
+
+npx -y @modelcontextprotocol/inspector
+
+################################下周任务########################
+任务： 依托Revit2025， 支持各种格式文件导入， 自动导出IFC 或者sketchup文件
