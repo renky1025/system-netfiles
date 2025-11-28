@@ -12,3 +12,4 @@ stats.html
 frontend/.vscode
 cmd/server/temp
 cmd/server/temp/*
+cmd/server/__debug_bin.exe
