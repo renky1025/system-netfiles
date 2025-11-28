@@ -10,3 +10,5 @@ frontend/pnpm-debug
 stats.html
 .idea
 frontend/.vscode
+cmd/server/temp
+cmd/server/temp/*
