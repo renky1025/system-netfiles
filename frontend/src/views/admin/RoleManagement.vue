@@ -32,9 +32,21 @@
               v-loading="loading"
               border
             >
-              <el-table-column prop="name" label="Name" min-width="120" />
-              <el-table-column prop="description" label="Description" min-width="150" show-overflow-tooltip />
-              <el-table-column label="Actions" width="120" fixed="right">
+              <el-table-column prop="name" label="Name" min-width="100" />
+            <el-table-column prop="description" label="Description" min-width="120" show-overflow-tooltip />
+            <el-table-column label="Quota" width="100">
+              <template #default="scope">
+                <span v-if="scope.row.StorageQuota > 0">{{ formatSize(scope.row.StorageQuota) }}</span>
+                <span v-else class="inherit-text">Inherit</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="Rate Limit" width="100">
+              <template #default="scope">
+                <span v-if="scope.row.DownloadRateLimit > 0">{{ formatSize(scope.row.DownloadRateLimit) }}/s</span>
+                <span v-else class="inherit-text">Inherit</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="Actions" width="120" fixed="right">
                 <template #default="scope">
                   <el-button link type="primary" size="small" @click.stop="openEditDialog(scope.row)">
                     Edit
@@ -89,12 +101,33 @@
       :title="isEdit ? 'Edit Role' : 'Create Role'"
       width="500px"
     >
-      <el-form :model="roleForm" label-width="100px">
+      <el-form :model="roleForm" label-width="120px">
         <el-form-item label="Name" required>
           <el-input v-model="roleForm.name" placeholder="Role name" />
         </el-form-item>
         <el-form-item label="Description">
-          <el-input v-model="roleForm.description" type="textarea" :rows="3" placeholder="Role description" />
+          <el-input v-model="roleForm.description" type="textarea" :rows="2" placeholder="Role description" />
+        </el-form-item>
+        <el-divider content-position="left">Quota Settings</el-divider>
+        <el-form-item label="Storage Quota">
+          <el-input-number 
+            v-model="roleForm.quotaGB" 
+            :min="0" 
+            :max="10000"
+            :step="1"
+            placeholder="0 = inherit"
+          />
+          <span style="margin-left: 8px;">GB (0 = inherit from system)</span>
+        </el-form-item>
+        <el-form-item label="Download Limit">
+          <el-input-number 
+            v-model="roleForm.rateLimitMB" 
+            :min="0" 
+            :max="1000"
+            :step="1"
+            placeholder="0 = inherit"
+          />
+          <span style="margin-left: 8px;">MB/s (0 = inherit from system)</span>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -122,6 +155,7 @@ import {
   type RoleInfo,
   type PermissionInfo,
 } from '../../api/role';
+import { setRoleQuota } from '../../api/quota';
 
 const roles = ref<RoleInfo[]>([]);
 const allPermissions = ref<PermissionInfo[]>([]);
@@ -138,7 +172,17 @@ const saving = ref(false);
 const roleForm = reactive({
   name: '',
   description: '',
+  quotaGB: 0,
+  rateLimitMB: 0,
 });
+
+const formatSize = (bytes: number) => {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
 
 const fetchRoles = async () => {
   loading.value = true;
@@ -196,6 +240,8 @@ const openEditDialog = (role: RoleInfo) => {
   editingRoleId.value = role.ID;
   roleForm.name = role.Name;
   roleForm.description = role.Description || '';
+  roleForm.quotaGB = (role as any).StorageQuota ? Math.round((role as any).StorageQuota / (1024 * 1024 * 1024)) : 0;
+  roleForm.rateLimitMB = (role as any).DownloadRateLimit ? Math.round((role as any).DownloadRateLimit / (1024 * 1024)) : 0;
   dialogVisible.value = true;
 };
 
@@ -207,12 +253,17 @@ const handleSubmit = async () => {
 
   submitting.value = true;
   try {
+    const quotaBytes = roleForm.quotaGB * 1024 * 1024 * 1024;
+    const rateLimitBytes = roleForm.rateLimitMB * 1024 * 1024;
+    
     if (isEdit.value && editingRoleId.value) {
       const res = await updateRole(editingRoleId.value, {
         name: roleForm.name,
         description: roleForm.description,
       });
       if (res.code === 200 || res.code === 0) {
+        // Update quota separately
+        await setRoleQuota(editingRoleId.value, quotaBytes, rateLimitBytes);
         ElMessage.success('Role updated');
         dialogVisible.value = false;
         fetchRoles();
@@ -225,6 +276,10 @@ const handleSubmit = async () => {
         description: roleForm.description,
       });
       if (res.code === 200 || res.code === 0) {
+        // Set quota for new role if needed
+        if (res.data?.id && (quotaBytes > 0 || rateLimitBytes > 0)) {
+          await setRoleQuota(res.data.id, quotaBytes, rateLimitBytes);
+        }
         ElMessage.success('Role created');
         dialogVisible.value = false;
         fetchRoles();

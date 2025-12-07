@@ -68,6 +68,15 @@
               <el-form-item label="Manager ID">
                 <el-input v-model.number="editForm.manager_id" type="number" placeholder="User ID" />
               </el-form-item>
+              <el-divider content-position="left">Quota Settings</el-divider>
+              <el-form-item label="Storage Quota">
+                <el-input-number v-model="editForm.quotaGB" :min="0" :max="10000" />
+                <span style="margin-left: 8px;">GB (0 = inherit)</span>
+              </el-form-item>
+              <el-form-item label="Download Limit">
+                <el-input-number v-model="editForm.rateLimitMB" :min="0" :max="1000" />
+                <span style="margin-left: 8px;">MB/s (0 = inherit)</span>
+              </el-form-item>
               <el-form-item label="Created At">
                 <span>{{ formatDate(selectedOrg.CreatedAt) }}</span>
               </el-form-item>
@@ -116,6 +125,7 @@ import { ref, onMounted, reactive } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { getOrgTree, createOrg, updateOrg, deleteOrg } from '../../api/org';
 import type { OrgInfo } from '../../api/org';
+import { setOrgQuota } from '../../api/quota';
 
 const orgTree = ref<OrgInfo[]>([]);
 const flatOrgList = ref<OrgInfo[]>([]);
@@ -135,6 +145,8 @@ const editForm = reactive({
   name: '',
   type: '',
   manager_id: undefined as number | undefined,
+  quotaGB: 0,
+  rateLimitMB: 0,
 });
 
 const defaultProps = {
@@ -185,6 +197,8 @@ const handleNodeClick = (data: OrgInfo) => {
   editForm.name = data.Name;
   editForm.type = data.Type;
   editForm.manager_id = data.ManagerID || undefined;
+  editForm.quotaGB = (data as any).StorageQuota ? Math.round((data as any).StorageQuota / (1024 * 1024 * 1024)) : 0;
+  editForm.rateLimitMB = (data as any).DownloadRateLimit ? Math.round((data as any).DownloadRateLimit / (1024 * 1024)) : 0;
 };
 
 const openCreateDialog = (parent: OrgInfo | null) => {
@@ -232,12 +246,13 @@ const handleUpdate = async () => {
     });
 
     if (res.code === 200 || res.code === 0) {
+      // Update quota
+      const quotaBytes = editForm.quotaGB * 1024 * 1024 * 1024;
+      const rateLimitBytes = editForm.rateLimitMB * 1024 * 1024;
+      await setOrgQuota(selectedOrg.value.ID, quotaBytes, rateLimitBytes);
+      
       ElMessage.success('Organization updated');
       fetchOrgTree();
-      // Update selectedOrg locally to reflect changes immediately in UI if needed, 
-      // but fetchOrgTree will refresh the tree.
-      // We might need to re-select the node or just let the tree refresh.
-      // Re-selection might be tricky after refresh if reference changes.
     } else {
       ElMessage.error(res.msg || 'Failed to update');
     }

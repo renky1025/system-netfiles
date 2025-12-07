@@ -14,6 +14,8 @@ type User struct {
 	Email         string         `gorm:"uniqueIndex;size:100" json:"email"`
 	Phone         string         `gorm:"size:20" json:"phone"`
 	Status        int            `gorm:"default:1" json:"status"` // 1: Active, 0: Disabled
+	StorageQuota  int64          `gorm:"default:5368709120" json:"storage_quota"`   // 默认5GB (5*1024*1024*1024)
+	UsedStorage   int64          `gorm:"default:0" json:"used_storage"`             // 已用存储空间(bytes)
 	Roles         []Role         `gorm:"many2many:user_roles;" json:"roles"`
 	Organizations []Organization `gorm:"many2many:user_organizations;" json:"organizations"`
 	CreatedAt     time.Time      `json:"created_at"`
@@ -23,12 +25,14 @@ type User struct {
 
 // Role represents a user role (RBAC)
 type Role struct {
-	ID          uint         `gorm:"primaryKey" json:"id"`
-	Name        string       `gorm:"uniqueIndex;size:50;not null" json:"name"`
-	Description string       `gorm:"size:255" json:"description"`
-	Permissions []Permission `gorm:"many2many:role_permissions;" json:"permissions,omitempty"`
-	CreatedAt   time.Time    `json:"created_at"`
-	UpdatedAt   time.Time    `json:"updated_at"`
+	ID                uint         `gorm:"primaryKey" json:"id"`
+	Name              string       `gorm:"uniqueIndex;size:50;not null" json:"name"`
+	Description       string       `gorm:"size:255" json:"description"`
+	StorageQuota      int64        `gorm:"default:0" json:"storage_quota"`       // 角色配额(bytes), 0=使用系统默认
+	DownloadRateLimit int64        `gorm:"default:0" json:"download_rate_limit"` // 下载限速(bytes/s), 0=使用系统默认
+	Permissions       []Permission `gorm:"many2many:role_permissions;" json:"permissions,omitempty"`
+	CreatedAt         time.Time    `json:"created_at"`
+	UpdatedAt         time.Time    `json:"updated_at"`
 }
 
 // Permission represents a specific action (RBAC)
@@ -161,17 +165,19 @@ type AdminLog struct {
 
 // Organization represents company/department structure
 type Organization struct {
-	ID        uint          `gorm:"primaryKey"`
-	ParentID  *uint         `gorm:"index"`
-	Parent    *Organization `gorm:"foreignKey:ParentID"`
-	Name      string        `gorm:"size:100;not null"`
-	Type      string        `gorm:"size:20;index"`  // "company", "department"
-	Path      string        `gorm:"size:500;index"` // Materialized path: /1/5/
-	ManagerID *uint
-	Manager   *User `gorm:"foreignKey:ManagerID"`
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	DeletedAt gorm.DeletedAt `gorm:"index"`
+	ID                uint           `gorm:"primaryKey"`
+	ParentID          *uint          `gorm:"index"`
+	Parent            *Organization  `gorm:"foreignKey:ParentID"`
+	Name              string         `gorm:"size:100;not null"`
+	Type              string         `gorm:"size:20;index"`  // "company", "department"
+	Path              string         `gorm:"size:500;index"` // Materialized path: /1/5/
+	StorageQuota      int64          `gorm:"default:0"`      // 部门配额(bytes), 0=使用上级或系统默认
+	DownloadRateLimit int64          `gorm:"default:0"`      // 下载限速(bytes/s), 0=使用上级或系统默认
+	ManagerID         *uint
+	Manager           *User          `gorm:"foreignKey:ManagerID"`
+	CreatedAt         time.Time
+	UpdatedAt         time.Time
+	DeletedAt         gorm.DeletedAt `gorm:"index"`
 }
 
 // UserOrganization represents user-organization relationship

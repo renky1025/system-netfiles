@@ -13,6 +13,7 @@ type Config struct {
 	Storage  StorageConfig  `yaml:"storage" mapstructure:"storage"`
 	MinIO    MinIOConfig    `yaml:"minio" mapstructure:"minio"`
 	JWT      JWTConfig      `yaml:"jwt" mapstructure:"jwt"`
+	Quota    QuotaConfig    `yaml:"quota" mapstructure:"quota"`
 }
 
 type ServerConfig struct {
@@ -51,6 +52,14 @@ type MinIOConfig struct {
 type JWTConfig struct {
 	Secret      string `yaml:"secret" mapstructure:"secret"`
 	ExpireHours int    `yaml:"expire_hours" mapstructure:"expire_hours"`
+}
+
+type QuotaConfig struct {
+	DefaultQuota        int64 `yaml:"default_quota" mapstructure:"default_quota"`                 // 默认配额(bytes), 默认5GB
+	DefaultDownloadRate int64 `yaml:"default_download_rate" mapstructure:"default_download_rate"` // 默认下载速率(bytes/s), 默认1MB/s
+	VIPDownloadRate     int64 `yaml:"vip_download_rate" mapstructure:"vip_download_rate"`         // VIP下载速率, 默认10MB/s
+	EnableQuota         bool  `yaml:"enable_quota" mapstructure:"enable_quota"`                   // 是否启用配额
+	EnableRateLimit     bool  `yaml:"enable_rate_limit" mapstructure:"enable_rate_limit"`         // 是否启用下载限速
 }
 
 var AppConfig Config

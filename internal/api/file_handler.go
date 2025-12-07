@@ -9,12 +9,14 @@ import (
 )
 
 type FileHandler struct {
-	fileService *service.FileService
+	fileService  *service.FileService
+	quotaService *service.QuotaService
 }
 
 func NewFileHandler() *FileHandler {
 	return &FileHandler{
-		fileService: service.NewFileService(),
+		fileService:  service.NewFileService(),
+		quotaService: service.NewQuotaService(),
 	}
 }
 
@@ -163,7 +165,19 @@ func (h *FileHandler) DownloadFile(c *gin.Context) {
 		return
 	}
 
-	c.FileAttachment(file.Path, file.Name)
+	// Get user download rate limit
+	rateLimit := h.quotaService.GetUserDownloadRateLimit(userID)
+
+	// Serve file with rate limiting
+	if rateLimit > 0 {
+		c.Header("Content-Disposition", "attachment; filename=\""+file.Name+"\"")
+		c.Header("Content-Type", "application/octet-stream")
+		c.Header("X-Rate-Limit", strconv.FormatInt(rateLimit, 10))
+		// Use middleware's throttled writer
+		c.File(file.Path)
+	} else {
+		c.FileAttachment(file.Path, file.Name)
+	}
 }
 
 func (h *FileHandler) DeleteFile(c *gin.Context) {

@@ -57,6 +57,11 @@
           </el-button>
         </div>
         <FolderTree ref="folderTreeRef" @folder-selected="handleFolderSelected" />
+        
+        <!-- Storage Quota Display -->
+        <div class="sidebar-quota">
+          <StorageQuotaCard ref="quotaCardRef" />
+        </div>
       </el-aside>
 
       <!-- Main Content -->
@@ -244,6 +249,7 @@ import MoveCopyDialog from '../components/MoveCopyDialog.vue';
 import RenameFileDialog from '../components/RenameFileDialog.vue';
 import FilePreview from '../components/FilePreview.vue';
 import VersionHistoryDialog from '../components/VersionHistoryDialog.vue';
+import StorageQuotaCard from '../components/StorageQuotaCard.vue';
 
 const userStore = useUserStore();
 const router = useRouter();
@@ -257,6 +263,7 @@ const currentFolderId = ref<number | null>(null);
 const selectedFile = ref<any>(null);
 const selectedItems = ref<any[]>([]);
 const folderTreeRef = ref();
+const quotaCardRef = ref();
 const searchQuery = ref('');
 const isSearchMode = ref(false);
 const searchResults = ref<SearchResult[]>([]);
@@ -848,5 +855,11 @@ onMounted(() => {
 
 :deep(.el-table__row:hover) {
   background-color: #f5f7fa;
+}
+
+.sidebar-quota {
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 1px solid #dcdfe6;
 }
 </style>

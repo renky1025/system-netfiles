@@ -159,6 +159,10 @@ func main() {
 		searchHandler := api.NewSearchHandler()
 		apiGroup.POST("/search", searchHandler.Search)
 		apiGroup.GET("/search/suggestions", searchHandler.SearchSuggestions)
+
+		// Quota operations
+		quotaHandler := api.NewQuotaHandler()
+		apiGroup.GET("/quota", quotaHandler.GetMyQuota)
 	}
 
 	// Admin routes (requires admin privileges)
@@ -202,6 +206,14 @@ func main() {
 		adminGroup.GET("/config/:key", configHandler.GetConfig)
 		adminGroup.POST("/config", configHandler.SetConfig)
 		adminGroup.DELETE("/config/:key", configHandler.DeleteConfig)
+
+		// Quota management
+		quotaHandler := api.NewQuotaHandler()
+		adminGroup.GET("/users/:id/quota", quotaHandler.GetUserQuota)
+		adminGroup.PUT("/users/:id/quota", quotaHandler.SetUserQuota)
+		adminGroup.POST("/users/:id/recalculate-storage", quotaHandler.RecalculateStorage)
+		adminGroup.PUT("/roles/:id/quota", quotaHandler.SetRoleQuota)
+		adminGroup.PUT("/orgs/:id/quota", quotaHandler.SetOrganizationQuota)
 	}
 
 	// Public share access

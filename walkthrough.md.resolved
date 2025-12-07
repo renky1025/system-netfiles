@@ -1,0 +1,69 @@
+# 用户配额与下载限速功能 - 完整实现
+
+## 功能总览
+
+- ✅ **角色/部门级配额** - 无需单独设置每个用户
+- ✅ **自动继承** - 用户 > 角色 > 部门 > 系统默认
+- ✅ **用户侧边栏** - 实时显示存储使用进度
+- ✅ **管理后台** - 角色/部门配额设置界面
+
+---
+
+## 后端变更
+
+| 文件 | 变更 |
+|------|------|
+| [models.go](file:///Users/kyren/workspace/system-netfiles/internal/model/models.go) | User/Role/Organization 添加配额字段 |
+| [config.go](file:///Users/kyren/workspace/system-netfiles/internal/config/config.go) | QuotaConfig 配置结构 |
+| [quota_service.go](file:///Users/kyren/workspace/system-netfiles/internal/service/quota_service.go) | 配额检查/更新/层级解析 |
+| [download_limiter.go](file:///Users/kyren/workspace/system-netfiles/internal/middleware/download_limiter.go) | 令牌桶限速中间件 |
+| [file_service.go](file:///Users/kyren/workspace/system-netfiles/internal/service/file_service.go) | 上传配额检查/删除释放 |
+| [quota_handler.go](file:///Users/kyren/workspace/system-netfiles/internal/api/quota_handler.go) | 配额API处理器 |
+| [file_handler.go](file:///Users/kyren/workspace/system-netfiles/internal/api/file_handler.go) | 下载限速集成 |
+| [main.go](file:///Users/kyren/workspace/system-netfiles/cmd/server/main.go) | 新增路由注册 |
+
+---
+
+## 前端变更
+
+| 文件 | 变更 |
+|------|------|
+| [quota.ts](file:///Users/kyren/workspace/system-netfiles/frontend/src/api/quota.ts) | 配额API客户端 |
+| [StorageQuotaCard.vue](file:///Users/kyren/workspace/system-netfiles/frontend/src/components/StorageQuotaCard.vue) | 存储使用进度组件 |
+| [Home.vue](file:///Users/kyren/workspace/system-netfiles/frontend/src/views/Home.vue) | 侧边栏集成进度条 |
+| [RoleManagement.vue](file:///Users/kyren/workspace/system-netfiles/frontend/src/views/admin/RoleManagement.vue) | 角色配额设置 |
+| [OrgManagement.vue](file:///Users/kyren/workspace/system-netfiles/frontend/src/views/admin/OrgManagement.vue) | 部门配额设置 |
+
+---
+
+## 新增API
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/api/quota` | 获取当前用户配额 |
+| PUT | `/api/admin/roles/:id/quota` | 设置角色配额 |
+| PUT | `/api/admin/orgs/:id/quota` | 设置部门配额 |
+| PUT | `/api/admin/users/:id/quota` | 设置用户个人配额 |
+| POST | `/api/admin/users/:id/recalculate-storage` | 重算用户存储 |
+
+---
+
+## 验证结果
+
+```bash
+# 后端构建
+$ go build ./...
+✅ 编译成功
+
+# 前端需要安装依赖
+$ cd frontend && npm install
+```
+
+---
+
+## 使用说明
+
+1. **配置系统默认值** - 在 `config.yaml` 添加 quota 配置
+2. **设置角色配额** - 管理后台 > 角色管理 > 编辑角色
+3. **设置部门配额** - 管理后台 > 组织管理 > 选择部门编辑
+4. **用户查看** - 左侧边栏自动显示存储使用进度

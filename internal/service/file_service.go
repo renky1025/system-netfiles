@@ -18,9 +18,10 @@ import (
 )
 
 type FileService struct {
-	fileRepo    *repository.FileRepository
-	permService *PermService
-	storage     storage.StorageService
+	fileRepo     *repository.FileRepository
+	permService  *PermService
+	storage      storage.StorageService
+	quotaService *QuotaService
 }
 
 func NewFileService() *FileService {
@@ -48,9 +49,10 @@ func NewFileService() *FileService {
 	}
 
 	return &FileService{
-		fileRepo:    repository.NewFileRepository(),
-		permService: NewPermService(),
-		storage:     storageService,
+		fileRepo:     repository.NewFileRepository(),
+		permService:  NewPermService(),
+		storage:      storageService,
+		quotaService: NewQuotaService(),
 	}
 }
 
@@ -81,6 +83,11 @@ func (s *FileService) InstantUpload(md5Hash, fileName string, userID uint, folde
 	}
 	if perm&model.PermWrite == 0 {
 		return nil, errors.New("permission denied: cannot write to this folder")
+	}
+
+	// Check storage quota before upload
+	if err := s.quotaService.CheckQuota(userID, fileSize); err != nil {
+		return nil, err
 	}
 
 	// Find existing file with same MD5
@@ -212,6 +219,19 @@ func (s *FileService) MergeChunks(uploadID string, fileName string, totalChunks 
 		return chunks[i].ChunkIndex < chunks[j].ChunkIndex
 	})
 
+	// Calculate total size from chunks for quota check
+	var estimatedSize int64
+	for _, chunk := range chunks {
+		if info, err := os.Stat(chunk.Path); err == nil {
+			estimatedSize += info.Size()
+		}
+	}
+
+	// Check storage quota before merge
+	if err := s.quotaService.CheckQuota(userID, estimatedSize); err != nil {
+		return err
+	}
+
 	// Create a pipe to stream merged chunks
 	pr, pw := io.Pipe()
 	hash := md5.New()
@@ -313,6 +333,9 @@ func (s *FileService) MergeChunks(uploadID string, fileName string, totalChunks 
 	s.fileRepo.DeleteChunksByUploadID(uploadID)
 	os.RemoveAll(filepath.Join(config.AppConfig.Storage.LocalPath, "temp", uploadID))
 
+	// Update user storage usage
+	s.quotaService.UpdateUsedStorage(userID, totalSize)
+
 	return nil
 }
 
@@ -371,7 +394,14 @@ func (s *FileService) DeleteFile(fileID uint, userID uint) error {
 	file.DeletedAt.Valid = true // GORM soft delete
 	file.DeletedAt.Time = time.Now()
 
-	return s.fileRepo.Update(file)
+	if err := s.fileRepo.Update(file); err != nil {
+		return err
+	}
+
+	// Release storage quota (use negative delta)
+	s.quotaService.UpdateUsedStorage(file.CreatorID, -file.Size)
+
+	return nil
 }
 
 // MoveFile moves a file to a different folder
