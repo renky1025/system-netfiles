@@ -81,7 +81,7 @@ export interface FileInfo {
 }
 
 export interface FileListResponse {
-  files: FileInfo[];
+  list: FileInfo[];
 }
 
 export interface FileCheckRequest {

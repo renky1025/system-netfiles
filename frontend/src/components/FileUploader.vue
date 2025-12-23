@@ -16,6 +16,7 @@ import { checkFile, instantUpload, uploadChunk, mergeChunks } from '../api/file'
 import { ElMessage } from 'element-plus';
 import { v4 as uuidv4 } from 'uuid';
 import SparkMD5 from 'spark-md5';
+import api from '../api/axios';
 
 const props = defineProps<{
   currentFolderId: number | null;
@@ -62,6 +63,23 @@ const customUpload = async (options: any) => {
   const file = options.file;
   
   try {
+    // 0. Check max upload size by total file size (before chunking)
+    try {
+      const res = await api.get('/api/admin/config/max_upload_size');
+      const maxSize = Number(res.data?.data?.value || 104857600);
+      if (maxSize > 0 && file.size > maxSize) {
+        ElMessage.error('File is too large and exceeds the maximum upload size');
+        return;
+      }
+    } catch (e) {
+      // Fallback to default if config fetch fails
+      const fallbackMax = 104857600;
+      if (file.size > fallbackMax) {
+        ElMessage.error('File is too large and exceeds the maximum upload size');
+        return;
+      }
+    }
+
     // 1. Calculate MD5
     const md5 = await calculateMD5(file);
 

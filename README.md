@@ -2,6 +2,10 @@
 
 一个基于 Go + Vue3 的企业级网络文件管理系统，支持文件上传、下载、分享、权限管理等功能。
 
+![admin](/assets/adminpage.png)
+![share](/assets/sharepage.png)
+![user](/assets/userportal.png)
+
 ## 🚀 功能特性
 
 ### 核心功能

@@ -15,19 +15,28 @@
           </div>
           
           <el-table :data="fileLogs" style="width: 100%" v-loading="fileLoading">
-            <el-table-column prop="id" label="ID" width="80" />
-            <el-table-column prop="username" label="User" width="120" />
-            <el-table-column prop="operation" label="Operation" width="120">
+            <el-table-column prop="ID" label="ID" width="80" />
+            <el-table-column label="User" width="150">
               <template #default="scope">
-                <el-tag>{{ scope.row.operation }}</el-tag>
+                {{ scope.row.User?.username || scope.row.User?.Username || '-' }}
               </template>
             </el-table-column>
-            <el-table-column prop="file_name" label="File" width="200" />
-            <el-table-column prop="details" label="Details" min-width="200" show-overflow-tooltip />
-            <el-table-column prop="ip" label="IP" width="140" />
+            <el-table-column prop="OpType" label="Operation" width="140">
+              <template #default="scope">
+                <el-tag>{{ scope.row.OpType }}</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="File ID" width="120">
+              <template #default="scope">
+                <span v-if="scope.row.FileID">{{ scope.row.FileID }}</span>
+                <span v-else>-</span>
+              </template>
+            </el-table-column>
+            <el-table-column prop="Details" label="Details" min-width="200" show-overflow-tooltip />
+            <el-table-column prop="ClientIP" label="IP" width="140" />
             <el-table-column label="Time" width="180">
               <template #default="scope">
-                {{ formatDate(scope.row.created_at) }}
+                {{ formatDate(scope.row.CreatedAt) }}
               </template>
             </el-table-column>
           </el-table>
@@ -50,20 +59,24 @@
           </div>
 
           <el-table :data="loginLogs" style="width: 100%" v-loading="loginLoading">
-            <el-table-column prop="id" label="ID" width="80" />
-            <el-table-column prop="username" label="User" width="150" />
+            <el-table-column prop="ID" label="ID" width="80" />
+            <el-table-column label="User" width="150">
+              <template #default="scope">
+                {{ scope.row.User?.username || scope.row.User?.Username || '-' }}
+              </template>
+            </el-table-column>
             <el-table-column label="Status" width="100">
               <template #default="scope">
-                <el-tag :type="scope.row.status === 1 ? 'success' : 'danger'">
-                  {{ scope.row.status === 1 ? 'Success' : 'Failed' }}
+                <el-tag :type="scope.row.Success ? 'success' : 'danger'">
+                  {{ scope.row.Success ? 'Success' : 'Failed' }}
                 </el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="ip" label="IP" width="140" />
-            <el-table-column prop="user_agent" label="User Agent" min-width="200" show-overflow-tooltip />
+            <el-table-column prop="ClientIP" label="IP" width="140" />
+            <el-table-column prop="UserAgent" label="User Agent" min-width="200" show-overflow-tooltip />
             <el-table-column label="Time" width="180">
               <template #default="scope">
-                {{ formatDate(scope.row.created_at) }}
+                {{ formatDate(scope.row.CreatedAt) }}
               </template>
             </el-table-column>
           </el-table>
@@ -91,14 +104,14 @@ import { ElMessage } from 'element-plus';
 const activeTab = ref('file-ops');
 
 // File Logs State
-const fileLogs = ref([]);
+const fileLogs = ref<any[]>([]);
 const fileLoading = ref(false);
 const filePage = ref(1);
 const filePageSize = ref(20);
 const fileTotal = ref(0);
 
 // Login Logs State
-const loginLogs = ref([]);
+const loginLogs = ref<any[]>([]);
 const loginLoading = ref(false);
 const loginPage = ref(1);
 const loginPageSize = ref(20);
@@ -124,7 +137,7 @@ const fetchLoginLogs = async () => {
   try {
     const res = await getLoginLogs(loginPage.value, loginPageSize.value);
     if (res.data) {
-      loginLogs.value = res.data.data || [];
+      loginLogs.value = res.data.list || [];
       loginTotal.value = res.data.total || 0;
     }
   } catch (err) {

@@ -28,7 +28,9 @@ func (s *RecycleService) ListRecycleBin(userID uint, page, pageSize int) ([]mode
 
 	offset := (page - 1) * pageSize
 
-	query := db.DB.Unscoped().Where("creator_id = ? AND status = ?", userID, 2)
+	// 必须显式设置 Model，否则 GORM 在 Count 时不知道对应数据表，会报
+	// "Table not set, please set it like: db.Model(&user) or db.Table(\"users\")"
+	query := db.DB.Unscoped().Model(&model.File{}).Where("creator_id = ? AND status = ?", userID, 2)
 
 	if err := query.Count(&total).Error; err != nil {
 		return nil, 0, err

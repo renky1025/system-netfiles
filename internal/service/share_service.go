@@ -202,7 +202,8 @@ func (s *ShareService) ListUserShares(userID uint, page, pageSize int) ([]model.
 
 	offset := (page - 1) * pageSize
 
-	query := db.DB.Where("creator_id = ?", userID)
+	// 显式指定 Model，确保 Count/Find 使用 shares 表
+	query := db.DB.Model(&model.Share{}).Where("creator_id = ?", userID)
 
 	if err := query.Count(&total).Error; err != nil {
 		return nil, 0, err

@@ -121,12 +121,14 @@ const handleSubmit = async () => {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
+  min-height: 100vh;
+  padding: 40px 16px;
   background-color: #f0f2f5;
 }
 
 .auth-card {
-  width: 400px;
+  width: 100%;
+  max-width: 520px;
 }
 
 .card-header {

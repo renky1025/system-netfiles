@@ -47,7 +47,7 @@ func RateLimiterMiddleware(rateLimit string) gin.HandlerFunc {
 		// Default to 60 per minute if parsing fails
 		rate = limiter.Rate{
 			Period: 1 * time.Minute,
-			Limit:  60,
+			Limit:  120,
 		}
 	}
 

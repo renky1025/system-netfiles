@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"netfilessys/internal/pkg/response"
 	"netfilessys/internal/service"
 	"strconv"
@@ -74,6 +75,10 @@ func (h *FileHandler) InstantUpload(c *gin.Context) {
 
 	file, err := h.fileService.InstantUpload(req.MD5, req.FileName, userID, req.FolderID, req.FileSize)
 	if err != nil {
+		if errors.Is(err, service.ErrFileTooLarge) {
+			response.BadRequest(c, err.Error())
+			return
+		}
 		response.ServerError(c, err)
 		return
 	}
@@ -127,6 +132,10 @@ func (h *FileHandler) MergeChunks(c *gin.Context) {
 	userID := c.GetUint("userID")
 
 	if err := h.fileService.MergeChunks(req.UploadID, req.FileName, req.TotalChunks, userID, req.FolderID); err != nil {
+		if errors.Is(err, service.ErrFileTooLarge) {
+			response.BadRequest(c, err.Error())
+			return
+		}
 		response.ServerError(c, err)
 		return
 	}

@@ -1,6 +1,8 @@
 package api
 
 import (
+	"netfilessys/internal/model"
+	"netfilessys/internal/pkg/db"
 	"netfilessys/internal/pkg/response"
 	"netfilessys/internal/service"
 	"strconv"
@@ -11,6 +13,12 @@ import (
 
 type ShareHandler struct {
 	shareService *service.ShareService
+}
+
+type ShareResponse struct {
+	model.Share
+	FileName string `json:"file_name,omitempty"`
+	FileSize int64  `json:"file_size,omitempty"`
 }
 
 func NewShareHandler() *ShareHandler {
@@ -63,10 +71,22 @@ func (h *ShareHandler) GetShare(c *gin.Context) {
 		return
 	}
 
+	resp := ShareResponse{
+		Share: *share,
+	}
+
+	if share.FileID != nil {
+		var file model.File
+		if err := db.DB.First(&file, *share.FileID).Error; err == nil {
+			resp.FileName = file.Name
+			resp.FileSize = file.Size
+		}
+	}
+
 	// Record access
 	h.shareService.RecordShareAccess(share.ID, c.ClientIP(), c.Request.UserAgent(), "view")
 
-	response.Success(c, gin.H{"share": share})
+	response.Success(c, gin.H{"share": resp})
 }
 
 // ValidateSharePassword validates share password

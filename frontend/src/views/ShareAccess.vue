@@ -1,15 +1,21 @@
 <template>
-  <div class="share-access-container">
-    <div class="share-card">
-      <div class="header">
-        <h2>NetFileSys Share</h2>
-      </div>
+  <div class="share-page">
+    <header class="share-header">
+      <div class="share-logo">NetFileSys</div>
+      <div class="share-title">Share</div>
+    </header>
+
+    <main class="share-main">
+      <div class="share-card">
+        <div class="header">
+          <h2>NetFileSys Share</h2>
+        </div>
 
       <div v-if="loading" class="loading">
         <el-skeleton :rows="3" animated />
       </div>
 
-      <div v-else-if="error" class="error">
+        <div v-else-if="error" class="error">
         <el-result
           icon="error"
           title="Access Failed"
@@ -17,7 +23,7 @@
         />
       </div>
 
-      <div v-else-if="requirePassword && !authenticated" class="password-form">
+        <div v-else-if="requirePassword && !authenticated" class="password-form">
         <el-result
           icon="warning"
           title="Password Protected"
@@ -41,26 +47,27 @@
         </el-result>
       </div>
 
-      <div v-else class="file-info">
-        <div class="file-icon">
-          <el-icon :size="64" color="#409eff"><Document /></el-icon>
-        </div>
-        <h3 class="file-name">{{ shareInfo.file_name || 'Unknown File' }}</h3>
-        <p class="file-meta">Size: {{ formatSize(shareInfo.file_size || 0) }}</p>
-        <p class="file-meta" v-if="shareInfo.expired_at">Expires: {{ formatDate(shareInfo.expired_at) }}</p>
-        
-        <div class="actions">
-          <el-button type="primary" size="large" @click="handleDownload">
-            <el-icon><Download /></el-icon> Download
-          </el-button>
+        <div v-else class="file-info">
+          <div class="file-icon">
+            <el-icon :size="64" color="#409eff"><Document /></el-icon>
+          </div>
+          <h3 class="file-name">{{ displayFileName }}</h3>
+          <p class="file-meta">Size: {{ formatSize(displayFileSize) }}</p>
+          <p class="file-meta" v-if="displayExpiredAt">Expires: {{ formatDate(displayExpiredAt) }}</p>
+          
+          <div class="actions">
+            <el-button type="primary" size="large" @click="handleDownload">
+              <el-icon><Download /></el-icon> Download
+            </el-button>
+          </div>
         </div>
       </div>
-    </div>
+    </main>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { getShareInfo, validateShare, downloadShareFile } from '../api/share';
 import { Document, Download } from '@element-plus/icons-vue';
@@ -76,6 +83,21 @@ const authenticated = ref(false);
 const password = ref('');
 const validating = ref(false);
 const shareInfo = ref<any>({});
+
+const displayFileName = computed(() => {
+  const s = shareInfo.value || {};
+  return s.file_name || s.FileName || s.Name || 'Unknown File';
+});
+
+const displayFileSize = computed(() => {
+  const s = shareInfo.value || {};
+  return s.file_size || s.FileSize || s.Size || 0;
+});
+
+const displayExpiredAt = computed(() => {
+  const s = shareInfo.value || {};
+  return s.expired_at || s.ExpiredAt || '';
+});
 
 const fetchShareInfo = async () => {
   try {
@@ -135,7 +157,7 @@ const handleDownload = async () => {
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', shareInfo.value.file_name || 'download');
+    link.setAttribute('download', displayFileName.value || 'download');
     document.body.appendChild(link);
     link.click();
     link.remove();
@@ -144,7 +166,22 @@ const handleDownload = async () => {
     ElMessage.success('Download started');
   } catch (err: any) {
     console.error(err);
-    ElMessage.error(err.response?.data?.msg || err.response?.data?.error || 'Download failed');
+    let message = 'Download failed';
+
+    const resp = err?.response;
+    if (resp?.data instanceof Blob) {
+      try {
+        const text = await resp.data.text();
+        const json = JSON.parse(text);
+        message = json.msg || json.error || message;
+      } catch (parseErr) {
+        // ignore parse error, keep default message
+      }
+    } else if (resp?.data) {
+      message = resp.data.msg || resp.data.error || message;
+    }
+
+    ElMessage.error(message);
   }
 };
 
@@ -166,17 +203,45 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.share-access-container {
+.share-page {
+  min-height: 100vh;
   display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
+  flex-direction: column;
   background-color: #f0f2f5;
 }
 
+.share-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #409eff;
+  color: #fff;
+  padding: 0 20px;
+  height: 60px;
+}
+
+.share-logo {
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.share-title {
+  font-size: 16px;
+  opacity: 0.9;
+}
+
+.share-main {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 40px 20px;
+}
+
 .share-card {
-  width: 400px;
-  background: white;
+  width: 100%;
+  max-width: 720px;
+  background: #fff;
   border-radius: 8px;
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
   padding: 30px;

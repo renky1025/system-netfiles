@@ -70,7 +70,7 @@ const fetchFiles = async () => {
   try {
     const res = await getAllFiles(currentPage.value, pageSize.value);
     if (res.data) {
-      files.value = res.data.files || [];
+      files.value = res.data.list || [];
       // Note: The API response structure for file list might need adjustment if total is not returned directly
       // Assuming standard pagination response structure here
       total.value = (res.data as any).total || 0; 

@@ -17,11 +17,14 @@ import (
 	"time"
 )
 
+var ErrFileTooLarge = errors.New("file size exceeds maximum upload size")
+
 type FileService struct {
-	fileRepo     *repository.FileRepository
-	permService  *PermService
-	storage      storage.StorageService
-	quotaService *QuotaService
+	fileRepo      *repository.FileRepository
+	permService   *PermService
+	storage       storage.StorageService
+	quotaService  *QuotaService
+	configService *ConfigService
 }
 
 func NewFileService() *FileService {
@@ -49,10 +52,11 @@ func NewFileService() *FileService {
 	}
 
 	return &FileService{
-		fileRepo:     repository.NewFileRepository(),
-		permService:  NewPermService(),
-		storage:      storageService,
-		quotaService: NewQuotaService(),
+		fileRepo:      repository.NewFileRepository(),
+		permService:   NewPermService(),
+		storage:       storageService,
+		quotaService:  NewQuotaService(),
+		configService: NewConfigService(),
 	}
 }
 
@@ -83,6 +87,11 @@ func (s *FileService) InstantUpload(md5Hash, fileName string, userID uint, folde
 	}
 	if perm&model.PermWrite == 0 {
 		return nil, errors.New("permission denied: cannot write to this folder")
+	}
+
+	maxUploadSize := s.configService.GetConfigInt("max_upload_size", 104857600)
+	if maxUploadSize > 0 && fileSize > int64(maxUploadSize) {
+		return nil, ErrFileTooLarge
 	}
 
 	// Check storage quota before upload
@@ -225,6 +234,11 @@ func (s *FileService) MergeChunks(uploadID string, fileName string, totalChunks 
 		if info, err := os.Stat(chunk.Path); err == nil {
 			estimatedSize += info.Size()
 		}
+	}
+
+	maxUploadSize := s.configService.GetConfigInt("max_upload_size", 104857600)
+	if maxUploadSize > 0 && estimatedSize > int64(maxUploadSize) {
+		return ErrFileTooLarge
 	}
 
 	// Check storage quota before merge
